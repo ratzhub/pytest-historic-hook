@@ -43,7 +43,16 @@ Hook to push pytest execution results to MySQL (for Pytest Historic report)
     --hdesc="<EXECUTION-INFO>"
    ```
 
-   __Example:__
+   __Example:__ (MySQL installed in local)
+   ```
+   > pytest --historic=True
+    --hsname="admin"
+    --hspwd="Welcome1!"
+    --hname="projec1"
+    --hdesc="Smoke test on v1.0" <suite>
+   ```
+   
+   __Example:__ (MySQL installed in 10.30.2.150)
    ```
    > pytest --historic=True
     --hshost="10.30.2.150:3306"
