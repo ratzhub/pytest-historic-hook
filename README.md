@@ -25,11 +25,11 @@ Hook to push pytest execution results to MySQL (for Pytest Historic report)
 
    Pytest Historic report required following information, users must pass respective info while using hook
 
-    - --hshost --> mysql hosted machine ip address (default: localhost)
-    - --hsname --> mysql user name (default: superuser)
-    - --hspwd --> mysql password (default: passw0rd)
-    - --hname --> project name in pytest historic
-    - --hdesc --> execution info
+    --hshost --> mysql hosted machine ip address (default: localhost)
+    --hsname --> mysql user name (default: superuser)
+    --hspwd --> mysql password (default: passw0rd)
+    --hname --> project name in pytest historic
+    --hdesc --> execution info
 
 
  - Use `pytest-historic-hook` while executing tests
