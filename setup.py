@@ -26,7 +26,7 @@ setup(
     packages=find_packages(include=['pytest_historic_hook']),
     setup_requires=setup_requirements,
     url='https://github.com/adiralashiva8/pytest-historic-hook',
-    version='0.1.0',
+    version='0.1.2',
     zip_safe=True,
     install_requires=[
         'pytest',
