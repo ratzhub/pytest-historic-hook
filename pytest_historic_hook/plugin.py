@@ -365,7 +365,10 @@ def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass
     cursorObj.execute("SELECT COUNT(*) FROM TB_EXECUTION;")
     execution_rows = cursorObj.fetchone()
     # update robothistoric.tb_project table
-    rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (execution_rows[0], float("{0:.2f}".format((rows[0]/rows[1]*100))), projectname))
+    if rows[1]!=0:   
+        rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (execution_rows[0], float("{0:.2f}".format((rows[0]/rows[1]*100))), projectname))
+    else:
+        rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (execution_rows[0], 0, projectname))
     ocon.commit()
 
 def insert_into_suite_table(con, eid, name, executed, passed, failed, skip, xpass, xfail, error):
@@ -379,7 +382,7 @@ def insert_into_suite_table(con, eid, name, executed, passed, failed, skip, xpas
 def insert_into_test_table(con, eid, test, status, duration, msg):
     cursorObj = con.cursor()
     sql = "SELECT count(Test_Name) FROM TB_TEST WHERE Test_Name in (%s)"
-    val = (test)
+    val = (test, )
     cursorObj.execute(sql, val)
     count = cursorObj.fetchone()[0]
     if count == 0:
