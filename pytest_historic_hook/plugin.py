@@ -378,8 +378,17 @@ def insert_into_suite_table(con, eid, name, executed, passed, failed, skip, xpas
 
 def insert_into_test_table(con, eid, test, status, duration, msg):
     cursorObj = con.cursor()
-    sql = "INSERT INTO TB_TEST (Test_Id, Execution_Id, Test_Name, Test_Status, Test_Time, Test_Error) VALUES (%s, %s, %s, %s, %s, %s)"
-    val = (0, eid, test, status, duration, msg)
+    sql = "SELECT count(Test_Name) FROM TB_TEST WHERE Test_Name in (%s)"
+    val = (test)
     cursorObj.execute(sql, val)
+    count = cursorObj.fetchone()[0]
+    if count == 0:
+        sql = "INSERT INTO TB_TEST (Test_Id, Execution_Id, Test_Name, Test_Status, Test_Time, Test_Error) VALUES (%s, %s, %s, %s, %s, %s)"
+        val = (0, eid, test, status, duration, msg)
+        cursorObj.execute(sql, val)
+    else:
+        sql = "UPDATE TB_TEST SET Test_Id = %s, Execution_Id = %s, Test_Status = %s, Test_Time = %s, Test_Error = %s WHERE Test_Name = %s"
+        val = (0, eid, status, duration, msg, test)
+        cursorObj.execute(sql, val)
     # Skip commit to avoid load on db (commit once execution is done as part of close)
     # con.commit()
