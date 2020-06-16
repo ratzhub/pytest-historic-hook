@@ -373,7 +373,7 @@ def insert_into_execution_table(con, ocon, name, executed, passed, failed, skip,
                                 projectname, versions):
     cursorObj = con.cursor()
     # rootCursorObj = ocon.cursor()
-    sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, Execution_Executed, Execution_Pass, Execution_Fail, Execution_Skip, Execution_XPass, Execution_XFail, Execution_Error, Execution_Time) VALUES (%s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+    sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, Execution_Executed, Execution_Pass, Execution_Fail, Execution_Skip, Execution_XPass, Execution_XFail, Execution_Error, Execution_Time, Execution_Version) VALUES (%s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
     val = (0, name, executed, passed, failed, skip, xpass, xfail, error, ctime, versions)
     cursorObj.execute(sql, val)
     con.commit()
