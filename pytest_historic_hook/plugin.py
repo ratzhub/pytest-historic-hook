@@ -412,7 +412,7 @@ def insert_into_suite_table(con, eid, name, executed, passed, failed, skip, xpas
 
 
 def insert_into_test_table(con, eid, test, status, duration, msg):
-    global _fail, _sfail_tests
+    global _fail, _sfail_tests, _xfail, _sxfail_tests
     cursorObj = con.cursor()
     sql = "SELECT count(Test_Name) FROM TB_TEST WHERE Test_Name = %s and Execution_Id = %s"
     val = (test, eid)
