@@ -81,6 +81,12 @@ def pytest_addoption(parser):
         dest='hdesc',
         help='Execution description'
     )
+    group.addoption(
+        '--hversion',
+        action='store',
+        dest='versions',
+        help='Version info of components. Eg: --hversion "API=3.3 DB=1.3 UI=5.6"'
+    )
 
 
 @pytest.hookimpl()
@@ -97,6 +103,7 @@ def pytest_sessionstart(session):
     global pname
     pname = session.config.option.hname
     edesc = session.config.option.hdesc
+    versions = session.config.option.versions
 
     global con
     con = connect_to_mysql_db(host, uname, pwd, pname)
@@ -104,7 +111,7 @@ def pytest_sessionstart(session):
     ocon = connect_to_mysql_db(host, uname, pwd, "pytesthistoric")
     # insert values into execution table
     global id
-    id = insert_into_execution_table(con, ocon, edesc, 0, 0, 0, 0, 0, 0, 0, 0, pname)
+    id = insert_into_execution_table(con, ocon, edesc, 0, 0, 0, 0, 0, 0, 0, 0, pname, versions)
 
 
 def pytest_runtest_setup(item):
@@ -363,11 +370,11 @@ def connect_to_mysql_db(host, user, pwd, db):
 
 
 def insert_into_execution_table(con, ocon, name, executed, passed, failed, skip, xpass, xfail, error, ctime,
-                                projectname):
+                                projectname, versions):
     cursorObj = con.cursor()
     # rootCursorObj = ocon.cursor()
     sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, Execution_Executed, Execution_Pass, Execution_Fail, Execution_Skip, Execution_XPass, Execution_XFail, Execution_Error, Execution_Time) VALUES (%s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-    val = (0, name, executed, passed, failed, skip, xpass, xfail, error, ctime)
+    val = (0, name, executed, passed, failed, skip, xpass, xfail, error, ctime, versions)
     cursorObj.execute(sql, val)
     con.commit()
     cursorObj.execute(
