@@ -38,6 +38,7 @@ con = None
 ocon = None
 id = None
 
+
 def pytest_addoption(parser):
     group = parser.getgroup('phistoric')
     group.addoption(
@@ -84,7 +85,6 @@ def pytest_addoption(parser):
 
 @pytest.hookimpl()
 def pytest_sessionstart(session):
-
     global pytest_historic
     pytest_historic = session.config.option.historic
 
@@ -106,13 +106,14 @@ def pytest_sessionstart(session):
     global id
     id = insert_into_execution_table(con, ocon, edesc, 0, 0, 0, 0, 0, 0, 0, 0, pname)
 
-def pytest_runtest_setup(item):
 
+def pytest_runtest_setup(item):
     if pytest_historic == "False":
         return
 
     global _test_start_time
     _test_start_time = time.time()
+
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
@@ -126,7 +127,7 @@ def pytest_runtest_makereport(item, call):
     global _suite_name
     _suite_name = rep.nodeid.split("::")[0]
 
-    if _initial_trigger :
+    if _initial_trigger:
         update_previous_suite_name()
         set_initial_trigger()
 
@@ -161,7 +162,7 @@ def pytest_runtest_makereport(item, call):
                     for line in rep.longreprtext.splitlines():
                         exception = line.startswith("E   ")
                         if exception:
-                            update_test_error(line.replace("E    ",""))
+                            update_test_error(line.replace("E    ", ""))
         else:
             increment_error()
             update_test_status("ERROR")
@@ -177,7 +178,7 @@ def pytest_runtest_makereport(item, call):
                 for line in rep.longreprtext.splitlines():
                     exception = line.startswith("E   ")
                     if exception:
-                        update_test_error(line.replace("E    ",""))
+                        update_test_error(line.replace("E    ", ""))
         else:
             increment_skip()
             update_test_status("SKIP")
@@ -185,8 +186,8 @@ def pytest_runtest_makereport(item, call):
                 for line in rep.longreprtext.splitlines():
                     update_test_error(line)
 
-def pytest_runtest_teardown(item, nextitem):
 
+def pytest_runtest_teardown(item, nextitem):
     if pytest_historic == "False":
         return
 
@@ -205,13 +206,14 @@ def pytest_runtest_teardown(item, nextitem):
     # create list to save content
     insert_test_results()
 
-def pytest_sessionfinish(session):
 
+def pytest_sessionfinish(session):
     if pytest_historic == "False":
         return
 
     insert_suite_results(_suite_name)
     reset_counts()
+
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
@@ -229,23 +231,30 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     global _executed
     _executed = _pass + _fail + _xpass + _xfail
 
-    update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail), str(_error), round(_excution_time, 2), str(pname))
+    update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
+                           str(_error), round(_excution_time, 2), str(pname))
+
 
 def insert_suite_results(name):
-    _sexecuted =  _spass_tests + _sfail_tests + _sxpass_tests + _sxfail_tests
-    insert_into_suite_table(con, id, str(name), _sexecuted, _spass_tests, _sfail_tests, _sskip_tests, _sxpass_tests, _sxfail_tests, _serror_tests)
+    _sexecuted = _spass_tests + _sfail_tests + _sxpass_tests + _sxfail_tests
+    insert_into_suite_table(con, id, str(name), _sexecuted, _spass_tests, _sfail_tests, _sskip_tests, _sxpass_tests,
+                            _sxfail_tests, _serror_tests)
+
 
 def insert_test_results():
     full_name = str(_suite_name) + " - " + str(_test_name)
-    insert_into_test_table(con, id, full_name, str(_test_status), round(_duration,2), str(_current_error) )
+    insert_into_test_table(con, id, full_name, str(_test_status), round(_duration, 2), str(_current_error))
+
 
 def set_initial_trigger():
     global _initial_trigger
     _initial_trigger = False
 
+
 def update_previous_suite_name():
     global _previous_suite_name
     _previous_suite_name = _suite_name
+
 
 def update_counts(rep):
     global _sfail_tests, _spass_tests, _sskip_tests, _serror_tests, _sxfail_tests, _sxpass_tests
@@ -271,61 +280,73 @@ def update_counts(rep):
         else:
             _sskip_tests += 1
 
+
 def reset_counts():
     global _sfail_tests, _spass_tests, _sskip_tests, _serror_tests, _sxfail_tests, _sxpass_tests
-    _spass_tests  = 0
-    _sfail_tests  = 0
+    _spass_tests = 0
+    _sfail_tests = 0
     _sskip_tests = 0
     _serror_tests = 0
     _sxfail_tests = 0
     _sxpass_tests = 0
 
+
 def reset_suite_counts():
     global _fail, _pass, _skip, _error, _xfail, _xpass
-    _pass  = 0
-    _fail  = 0
+    _pass = 0
+    _fail = 0
     _skip = 0
     _error = 0
     _xfail = 0
     _xpass = 0
 
+
 def update_test_error(msg):
     global _current_error
     _current_error = msg
+
 
 def update_test_status(status):
     global _test_status
     _test_status = status
 
+
 def increment_xpass():
     global _xpass
     _xpass += 1
+
 
 def increment_xfail():
     global _xfail
     _xfail += 1
 
+
 def increment_pass():
     global _pass
     _pass += 1
+
 
 def increment_fail():
     global _fail
     _fail += 1
 
+
 def increment_skip():
     global _skip
     _skip += 1
 
+
 def increment_error():
     global _error
     _error += 1
+
 
 '''
 
 # * # * # * # * Re-usable methods out of class * # * # * # * #
 
 '''
+
 
 def connect_to_mysql_db(host, user, pwd, db):
     try:
@@ -340,24 +361,29 @@ def connect_to_mysql_db(host, user, pwd, db):
         print("Couldn't connect to Database")
         print(Exception)
 
-def insert_into_execution_table(con, ocon, name, executed, passed, failed, skip, xpass, xfail, error, ctime, projectname):
+
+def insert_into_execution_table(con, ocon, name, executed, passed, failed, skip, xpass, xfail, error, ctime,
+                                projectname):
     cursorObj = con.cursor()
     # rootCursorObj = ocon.cursor()
     sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, Execution_Executed, Execution_Pass, Execution_Fail, Execution_Skip, Execution_XPass, Execution_XFail, Execution_Error, Execution_Time) VALUES (%s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s);"
     val = (0, name, executed, passed, failed, skip, xpass, xfail, error, ctime)
     cursorObj.execute(sql, val)
     con.commit()
-    cursorObj.execute("SELECT Execution_Id, Execution_Pass, Execution_Executed FROM TB_EXECUTION ORDER BY Execution_Id DESC LIMIT 1;")
+    cursorObj.execute(
+        "SELECT Execution_Id, Execution_Pass, Execution_Executed FROM TB_EXECUTION ORDER BY Execution_Id DESC LIMIT 1;")
     rows = cursorObj.fetchone()
     # update robothistoric.tb_project table
     # rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (rows[0], float("{0:.2f}".format((rows[1]/rows[2]*100))), projectname))
     # ocon.commit()
     return str(rows[0])
 
+
 def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass, xfail, error, duration, projectname):
     cursorObj = con.cursor()
     rootCursorObj = ocon.cursor()
-    sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s WHERE Execution_Id=%s;" % (executed, passed, failed, skip, xpass, xfail, error, duration, eid)
+    sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s WHERE Execution_Id=%s;" % (
+        executed, passed, failed, skip, xpass, xfail, error, duration, eid)
     cursorObj.execute(sql)
     con.commit()
     cursorObj.execute("SELECT Execution_Pass, Execution_Executed FROM TB_EXECUTION ORDER BY Execution_Id DESC LIMIT 1;")
@@ -365,11 +391,16 @@ def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass
     cursorObj.execute("SELECT COUNT(*) FROM TB_EXECUTION;")
     execution_rows = cursorObj.fetchone()
     # update robothistoric.tb_project table
-    if rows[1]!=0:   
-        rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (execution_rows[0], float("{0:.2f}".format((rows[0]/rows[1]*100))), projectname))
+    if rows[1] != 0:
+        rootCursorObj.execute(
+            "UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (
+                execution_rows[0], float("{0:.2f}".format((rows[0] / rows[1] * 100))), projectname))
     else:
-        rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (execution_rows[0], 0, projectname))
+        rootCursorObj.execute(
+            "UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (
+                execution_rows[0], 0, projectname))
     ocon.commit()
+
 
 def insert_into_suite_table(con, eid, name, executed, passed, failed, skip, xpass, xfail, error):
     cursorObj = con.cursor()
@@ -378,6 +409,7 @@ def insert_into_suite_table(con, eid, name, executed, passed, failed, skip, xpas
     cursorObj.execute(sql, val)
     # Skip commit to avoid load on db (commit once execution is done as part of close)
     # con.commit()
+
 
 def insert_into_test_table(con, eid, test, status, duration, msg):
     global _fail, _sfail_tests
@@ -391,10 +423,19 @@ def insert_into_test_table(con, eid, test, status, duration, msg):
         val = (0, eid, test, status, duration, msg)
         cursorObj.execute(sql, val)
     else:
+        sql = "SELECT Test_Status FROM TB_TEST  WHERE Test_Name = %s and Execution_Id = %s"
+        val = (test, eid)
+        cursorObj.execute(sql, val)
+        status = cursorObj.fetchone()[0]
+        if status == "FAIL":
+            _fail -= 1
+            _sfail_tests -= 1
+        else:
+            _xfail -= 1
+            _sxfail_tests -= 1
         sql = "UPDATE TB_TEST SET Test_Status = %s, Test_Time = %s, Test_Error = %s WHERE Test_Name = %s and Execution_Id = %s"
         val = (status, duration, msg, test, eid)
         cursorObj.execute(sql, val)
-        _fail -= 1
-        _sfail_tests -= 1
+
     # Skip commit to avoid load on db (commit once execution is done as part of close)
     # con.commit()
