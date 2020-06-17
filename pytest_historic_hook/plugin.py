@@ -1,13 +1,10 @@
-import pytest
 import time
-import platform
-import datetime
-import sys
-import mysql.connector
+from json import dumps
 
-from _pytest.runner import pytest_runtest_setup
-from _pytest.runner import runtestprotocol
-from _pytest.runner import pytest_runtest_teardown
+import mysql.connector
+import pytest
+from httplib2 import Http
+import threading
 
 _total = 0
 _executed = 0
@@ -37,6 +34,8 @@ pname = None
 con = None
 ocon = None
 id = None
+host = None
+edesc = None
 
 
 def pytest_addoption(parser):
@@ -91,7 +90,7 @@ def pytest_addoption(parser):
 
 @pytest.hookimpl()
 def pytest_sessionstart(session):
-    global pytest_historic
+    global pytest_historic, pname, host, edesc
     pytest_historic = session.config.option.historic
 
     if pytest_historic == "False":
@@ -100,7 +99,6 @@ def pytest_sessionstart(session):
     host = session.config.option.hshost
     uname = session.config.option.hsname
     pwd = session.config.option.hspwd
-    global pname
     pname = session.config.option.hname
     edesc = session.config.option.hdesc
     versions = session.config.option.versions
@@ -222,8 +220,31 @@ def pytest_sessionfinish(session):
     reset_counts()
 
 
+def post_webhook(results_url, failures_url, build_version, webhook_url):
+    """Hangouts Chat incoming webhook quickstart."""
+    url = webhook_url
+    msg = f'Build: {build_version}\nResults: {results_url}\nFailures: {failures_url}'
+    bot_message = {
+        'text': msg}
+
+    message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
+
+    http_obj = Http()
+
+    response = http_obj.request(
+        uri=url,
+        method='POST',
+        headers=message_headers,
+        body=dumps(bot_message),
+    )
+
+    print(response)
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    global host, pname, edesc
+
     yield
 
     if pytest_historic == "False":
@@ -240,6 +261,18 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
     update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
                            str(_error), round(_excution_time, 2), str(pname))
+
+    webhook_url = get_webhook(con, ocon, pname)
+    if webhook_url:
+        hostname = f'{host}:5000' if host == "localhost" else host
+
+        results_url = f'http://{hostname}/{pname}/metrics/{id}#'
+        failures_url = f'http://{hostname}/{pname}/failures/{id}'
+        t = threading.Thread(target=post_webhook, args=(results_url, failures_url, edesc, webhook_url))
+        try:
+            t.start()
+        except Exception as e:
+            print(e)
 
 
 def insert_suite_results(name):
@@ -384,6 +417,15 @@ def insert_into_execution_table(con, ocon, name, executed, passed, failed, skip,
     # rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (rows[0], float("{0:.2f}".format((rows[1]/rows[2]*100))), projectname))
     # ocon.commit()
     return str(rows[0])
+
+
+def get_webhook(con, ocon, projectname):
+    rootCursorObj = ocon.cursor()
+    sql = "SELECT Project_Webhook FROM TB_PROJECT WHERE Project_Name = %s;"
+    val = (projectname,)
+    rootCursorObj.execute(sql, val)
+    webhook_url = rootCursorObj.fetchone()[0]
+    return webhook_url
 
 
 def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass, xfail, error, duration, projectname):
