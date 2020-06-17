@@ -36,6 +36,7 @@ ocon = None
 id = None
 host = None
 edesc = None
+versions = None
 
 
 def pytest_addoption(parser):
@@ -80,12 +81,6 @@ def pytest_addoption(parser):
         dest='hdesc',
         help='Execution description'
     )
-    group.addoption(
-        '--hversion',
-        action='store',
-        dest='versions',
-        help='Version info of components. Eg: --hversion "API=3.3 DB=1.3 UI=5.6"'
-    )
 
 
 @pytest.hookimpl()
@@ -101,7 +96,6 @@ def pytest_sessionstart(session):
     pwd = session.config.option.hspwd
     pname = session.config.option.hname
     edesc = session.config.option.hdesc
-    versions = session.config.option.versions
 
     global con
     con = connect_to_mysql_db(host, uname, pwd, pname)
@@ -109,7 +103,7 @@ def pytest_sessionstart(session):
     ocon = connect_to_mysql_db(host, uname, pwd, "pytesthistoric")
     # insert values into execution table
     global id
-    id = insert_into_execution_table(con, ocon, edesc, 0, 0, 0, 0, 0, 0, 0, 0, pname, versions)
+    id = insert_into_execution_table(con, ocon, edesc, 0, 0, 0, 0, 0, 0, 0, 0, pname)
 
 
 def pytest_runtest_setup(item):
@@ -243,7 +237,7 @@ def post_webhook(results_url, failures_url, build_version, summary, webhook_url)
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
-    global host, pname, edesc
+    global host, pname, edesc, versions
 
     yield
 
@@ -259,8 +253,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     global _executed
     _executed = _pass + _fail + _xpass + _xfail
 
+    if hasattr(config, '_metadata') and 'versions':
+        versions = config._metadata
+
     update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
-                           str(_error), round(_excution_time, 2), str(pname))
+                           str(_error), round(_excution_time, 2), str(pname), versions)
 
     webhook_url = get_webhook(con, ocon, pname)
     if webhook_url:
@@ -412,11 +409,11 @@ def connect_to_mysql_db(host, user, pwd, db):
 
 
 def insert_into_execution_table(con, ocon, name, executed, passed, failed, skip, xpass, xfail, error, ctime,
-                                projectname, versions):
+                                projectname):
     cursorObj = con.cursor()
     # rootCursorObj = ocon.cursor()
-    sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, Execution_Executed, Execution_Pass, Execution_Fail, Execution_Skip, Execution_XPass, Execution_XFail, Execution_Error, Execution_Time, Execution_Version) VALUES (%s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-    val = (0, name, executed, passed, failed, skip, xpass, xfail, error, ctime, versions)
+    sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, Execution_Executed, Execution_Pass, Execution_Fail, Execution_Skip, Execution_XPass, Execution_XFail, Execution_Error, Execution_Time) VALUES (%s, now(), %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+    val = (0, name, executed, passed, failed, skip, xpass, xfail, error, ctime)
     cursorObj.execute(sql, val)
     con.commit()
     cursorObj.execute(
@@ -437,11 +434,13 @@ def get_webhook(con, ocon, projectname):
     return webhook_url
 
 
-def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass, xfail, error, duration, projectname):
+def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass, xfail, error, duration, projectname,
+                           versions):
     cursorObj = con.cursor()
     rootCursorObj = ocon.cursor()
-    sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s WHERE Execution_Id=%s;" % (
-        executed, passed, failed, skip, xpass, xfail, error, duration, eid)
+    sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s, Execution_Version='%s' WHERE Execution_Id=%s;" % (
+        executed, passed, failed, skip, xpass, xfail, error, duration, versions, eid)
+    print(sql)
     cursorObj.execute(sql)
     con.commit()
     cursorObj.execute("SELECT Execution_Pass, Execution_Executed FROM TB_EXECUTION ORDER BY Execution_Id DESC LIMIT 1;")
