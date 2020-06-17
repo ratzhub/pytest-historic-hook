@@ -220,10 +220,10 @@ def pytest_sessionfinish(session):
     reset_counts()
 
 
-def post_webhook(results_url, failures_url, build_version, webhook_url):
+def post_webhook(results_url, failures_url, build_version, summary, webhook_url):
     """Hangouts Chat incoming webhook quickstart."""
     url = webhook_url
-    msg = f'Build: {build_version}\nResults: {results_url}\nFailures: {failures_url}'
+    msg = f'Build: {build_version}\n{summary}\nResults: {results_url}\nFailures: {failures_url}'
     bot_message = {
         'text': msg}
 
@@ -265,10 +265,19 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     webhook_url = get_webhook(con, ocon, pname)
     if webhook_url:
         hostname = f'{host}:5000' if host == "localhost" else host
-
+        summary = f"{_pass} passed"
+        if _fail:
+            summary += f", {_fail} failed"
+        if _xfail:
+            summary += f", {_xfail} xfailed"
+        if _xpass:
+            summary += f", {_xpass} xpassed"
+        if _skip:
+            summary += f", {_skip} skipped"
+        summary += f" in {round(_excution_time, 2)}s"
         results_url = f'http://{hostname}/{pname}/metrics/{id}#'
         failures_url = f'http://{hostname}/{pname}/failures/{id}'
-        t = threading.Thread(target=post_webhook, args=(results_url, failures_url, edesc, webhook_url))
+        t = threading.Thread(target=post_webhook, args=(results_url, failures_url, edesc, summary, webhook_url))
         try:
             t.start()
         except Exception as e:
