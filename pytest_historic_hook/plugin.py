@@ -253,8 +253,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     global _executed
     _executed = _pass + _fail + _xpass + _xfail
 
-    if hasattr(config, '_metadata') and 'versions':
-        versions = config._metadata
+    if hasattr(config, '_metadata') and 'versions' in config._metadata.keys():
+        versions = config._metadata['versions']
 
     update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
                            str(_error), round(_excution_time, 2), str(pname), versions)
@@ -440,7 +440,6 @@ def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass
     rootCursorObj = ocon.cursor()
     sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s, Execution_Version='%s' WHERE Execution_Id=%s;" % (
         executed, passed, failed, skip, xpass, xfail, error, duration, versions, eid)
-    print(sql)
     cursorObj.execute(sql)
     con.commit()
     cursorObj.execute("SELECT Execution_Pass, Execution_Executed FROM TB_EXECUTION ORDER BY Execution_Id DESC LIMIT 1;")
