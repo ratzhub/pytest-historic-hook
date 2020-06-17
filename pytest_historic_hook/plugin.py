@@ -1,10 +1,10 @@
-import time
-from json import dumps
-
 import mysql.connector
 import pytest
-from httplib2 import Http
+import socket
 import threading
+import time
+from httplib2 import Http
+from json import dumps
 
 _total = 0
 _executed = 0
@@ -235,6 +235,19 @@ def post_webhook(results_url, failures_url, build_version, summary, webhook_url)
     print(response)
 
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     global host, pname, edesc, versions
@@ -261,7 +274,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
     webhook_url = get_webhook(con, ocon, pname)
     if webhook_url:
-        hostname = f'{host}:5000' if host == "localhost" else host
+
+        hostname = f'{get_ip()}:5000' if host == "localhost" else host
         summary = f"{_pass} passed"
         if _fail:
             summary += f", {_fail} failed"
