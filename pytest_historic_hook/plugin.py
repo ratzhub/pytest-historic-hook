@@ -490,8 +490,8 @@ def insert_into_test_table(con, eid, test, status, duration, msg):
         sql = "SELECT Test_Status FROM TB_TEST  WHERE Test_Name = %s and Execution_Id = %s"
         val = (test, eid)
         cursorObj.execute(sql, val)
-        status = cursorObj.fetchone()[0]
-        if status == "FAIL":
+        prev_status = cursorObj.fetchone()[0]
+        if prev_status == "FAIL":
             _fail -= 1
             _sfail_tests -= 1
         else:
