@@ -158,24 +158,32 @@ def pytest_runtest_makereport(item, call):
                 increment_fail()
                 update_test_status("FAIL")
                 if rep.longrepr:
-                    update_test_error(rep.longreprtext)
+                    for line in rep.longreprtext.splitlines():
+                        exception = line.startswith("E   ")
+                        if exception:
+                            update_test_error(line.replace("E    ", ""))
         else:
             increment_error()
             update_test_status("ERROR")
             if rep.longrepr:
-                update_test_error(rep.longreprtext)
+                for line in rep.longreprtext.splitlines():
+                    update_test_error(line)
 
     if rep.skipped:
         if hasattr(rep, "wasxfail"):
             increment_xfail()
             update_test_status("xFAIL")
             if rep.longrepr:
-                update_test_error(rep.longreprtext)
+                for line in rep.longreprtext.splitlines():
+                    exception = line.startswith("E   ")
+                    if exception:
+                        update_test_error(line.replace("E    ", ""))
         else:
             increment_skip()
             update_test_status("SKIP")
             if rep.longrepr:
-                update_test_error(rep.longreprtext)
+                for line in rep.longreprtext.splitlines():
+                    update_test_error(line)
 
 
 def pytest_runtest_teardown(item, nextitem):
