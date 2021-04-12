@@ -288,8 +288,9 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         if _error:
             summary += f", {_error} error(s)"
         summary += f" in {round(_excution_time, 2)}s"
-        results_url = f'http://{hostname}/{pname}/metrics/{id}#'
-        failures_url = f'http://{hostname}/{pname}/failures/{id}'
+        port = ":5000" if ":5000" not in hostname else ""
+        results_url = f'http://{hostname}{port}/{pname}/metrics/{id}#'
+        failures_url = f'http://{hostname}{port}/{pname}/failures/{id}'
         t = threading.Thread(target=post_webhook, args=(results_url, failures_url, edesc, summary, webhook_url))
         try:
             t.start()
