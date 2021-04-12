@@ -5,6 +5,7 @@ import threading
 import time
 from httplib2 import Http
 from json import dumps
+import requests
 
 _total = 0
 _executed = 0
@@ -248,6 +249,20 @@ def get_ip():
     return IP
 
 
+def upload_report(version_file, report_file):
+    url = f'http://{get_ip()}:5000/upload-pytest-results'
+    files = {'version_file': open(version_file, 'rb'),
+             'report_file': open(report_file, 'rb')}
+    requests.post(url, files=files)
+
+
+def update_description(con, eid, description):
+    cursorObj = con.cursor()
+    sql = "UPDATE TB_EXECUTION SET Execution_Desc=%s WHERE Execution_Id=%s;" % (description, eid)
+    cursorObj.execute(sql)
+    con.commit()
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     global host, pname, edesc, versions
@@ -268,6 +283,16 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
     if hasattr(config, '_metadata') and 'versions' in config._metadata.keys():
         versions = config._metadata['versions']
+    if hasattr(config, '_metadata') and 'sw_version' in config._metadata.keys():
+        sw_version = config._metadata['sw_version']
+    if hasattr(config, '_metadata') and 'version_file' in config._metadata.keys():
+        version_file = config._metadata['version_file']
+    if hasattr(config, '_metadata') and 'report_file' in config._metadata.keys():
+        report_file = config._metadata['report_file']
+
+    update_description(con, id, sw_version)
+
+    upload_report(version_file, report_file)
 
     update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
                            str(_error), round(_excution_time, 2), str(pname), versions)

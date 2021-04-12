@@ -33,6 +33,7 @@ setup(
         'pytest-runner',
         'mysql-connector',
         'httplib2',
+        'requests'
     ],
     entry_points={
         'pytest11': [
