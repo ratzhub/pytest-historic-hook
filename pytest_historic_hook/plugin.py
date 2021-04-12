@@ -290,7 +290,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     if hasattr(config, '_metadata') and 'report_file' in config._metadata.keys():
         report_file = config._metadata['report_file']
 
-    update_description(con, id, sw_version)
+    # update_description(con, id, sw_version)
 
     upload_report(version_file, report_file)
 
