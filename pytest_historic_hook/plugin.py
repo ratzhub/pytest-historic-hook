@@ -250,7 +250,7 @@ def get_ip():
 
 
 def upload_report(version_file, report_file):
-    url = f'http://{get_ip()}:5000/upload-pytest-results'
+    url = f'http://10.240.0.87:5000/upload-pytest-results'
     files = {'version_file': open(version_file, 'rb'),
              'report_file': open(report_file, 'rb')}
     requests.post(url, files=files)
