@@ -292,7 +292,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
     # update_description(con, id, sw_version)
 
-    upload_report(version_file, report_file)
+    if version_file and report_file:
+        upload_report(version_file, report_file)
 
     update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
                            str(_error), round(_excution_time, 2), str(pname), versions)
