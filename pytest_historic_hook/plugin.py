@@ -281,6 +281,9 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     global _executed
     _executed = _pass + _fail + _xpass + _xfail
 
+    version_file = None
+    report_file = None
+
     if hasattr(config, '_metadata') and 'versions' in config._metadata.keys():
         versions = config._metadata['versions']
     if hasattr(config, '_metadata') and 'sw_version' in config._metadata.keys():
