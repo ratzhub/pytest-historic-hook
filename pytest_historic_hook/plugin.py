@@ -292,6 +292,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         version_file = config._metadata['version_file']
     if hasattr(config, '_metadata') and 'report_file' in config._metadata.keys():
         report_file = config._metadata['report_file']
+    if hasattr(config, '_metadata') and 'pipeline_link' in config._metadata.keys():
+        pipeline_link = config._metadata['pipeline_link']
 
     # update_description(con, id, sw_version)
 
@@ -299,7 +301,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         upload_report(version_file, report_file)
 
     update_execution_table(con, ocon, id, int(_executed), int(_pass), int(_fail), int(_skip), int(_xpass), int(_xfail),
-                           str(_error), round(_excution_time, 2), str(pname), versions)
+                           str(_error), round(_excution_time, 2), str(pname), versions, pipeline_link)
 
     webhook_url = get_webhook(con, ocon, pname)
     if webhook_url:
@@ -481,11 +483,11 @@ def get_webhook(con, ocon, projectname):
 
 
 def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass, xfail, error, duration, projectname,
-                           versions):
+                           versions, pipeline_link):
     cursorObj = con.cursor()
     rootCursorObj = ocon.cursor()
-    sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s, Execution_Version='%s' WHERE Execution_Id=%s;" % (
-        executed, passed, failed, skip, xpass, xfail, error, duration, versions, eid)
+    sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s, Execution_Version='%s', Pipeline_Link='%s' WHERE Execution_Id=%s;" % (
+        executed, passed, failed, skip, xpass, xfail, error, duration, versions, eid, pipeline_link)
     cursorObj.execute(sql)
     con.commit()
     cursorObj.execute("SELECT Execution_Pass, Execution_Executed FROM TB_EXECUTION ORDER BY Execution_Id DESC LIMIT 1;")
