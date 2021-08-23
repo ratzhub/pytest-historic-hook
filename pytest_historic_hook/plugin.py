@@ -488,7 +488,7 @@ def update_execution_table(con, ocon, eid, executed, passed, failed, skip, xpass
     cursorObj = con.cursor()
     rootCursorObj = ocon.cursor()
     sql = "UPDATE TB_EXECUTION SET Execution_Executed=%s, Execution_Pass=%s, Execution_Fail=%s, Execution_Skip=%s, Execution_XPass=%s, Execution_XFail=%s, Execution_Error=%s, Execution_Time=%s, Execution_Version='%s', Pipeline_Link='%s' WHERE Execution_Id=%s;" % (
-        executed, passed, failed, skip, xpass, xfail, error, duration, versions, eid, pipeline_link)
+        executed, passed, failed, skip, xpass, xfail, error, duration, versions, pipeline_link, eid)
     print(sql)
     cursorObj.execute(sql)
     con.commit()
