@@ -283,7 +283,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
     version_file = None
     report_file = None
-    pipeline_link = None
+    pipeline_link = ""
 
     if hasattr(config, '_metadata') and 'versions' in config._metadata.keys():
         versions = config._metadata['versions']
